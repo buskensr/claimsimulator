@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SRB SIM!</title>
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+
+<main>
+
+
+    <section class="hero">
+        <div class="hero-body" id="app">
+          <div class="container">
+           
+            <div class="tile is-ancestor">
+                <div class="tile is-parent">
+                  <article class="tile is-child box">
+                
+                    <div class="field">
+                        <p class="title">Aanbod</p>
+                        <p class="subtitle">Instroom claims/ complexiteit</p>
+                        
+                        <b-field label="Instroom per werkdag">
+                                <b-slider id="instroom" v-model="instroom"  :min="-25" :max="25"  :tooltip-type="sliderType(instroom)" :type="sliderType(instroom)" :custom-formatter="val => val + '%'"></b-slider>
+                        </b-field>
+                        <b-field label="Benodigde aanraaktijd (min)">
+                                <b-slider id="aanraaktijd" v-model="aanraaktijd"  :min="-25" :max="25"  :tooltip-type="sliderType(aanraaktijd)" :type="sliderType(aanraaktijd)" :custom-formatter="val => val + '%'"></b-slider>
+                        </b-field>
+                        <b-field label="Benodigde aantal aanraakmomenten">
+                                <b-slider id="aanraakmomenten"  v-model="aanraakmomenten"  :min="-25" :max="25"  :tooltip-type="sliderType(aanraakmomenten)" :type="sliderType(aanraakmomenten)" :custom-formatter="val => val + '%'"></b-slider>
+                        </b-field>
+                        <b-field label="Wachtdagen (expertise en/of klant)">
+                                <b-slider id="wachtdagen" v-model="wachtdagen"  :min="-25" :max="25"  :tooltip-type="sliderType(wachtdagen)" :type="sliderType(wachtdagen)" :custom-formatter="val => val + '%'"></b-slider>
+                        </b-field>
+                    </div>
+                    </article>
+                </div>
+                <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <p class="title">Service</p>
+                    <p class="subtitle">Aantal behandelaren</p>
+                    <div class="field">
+                            <b-field label="Aantal FTE's">
+                             <b-slider id="fte" v-model="fte"  :min="0" :max="100" >
+                                    <template v-for="val in [10, 20, 30,40,50,60,70,80,90]">
+                                            <b-slider-tick :value="val" :key="val">{{ val }}</b-slider-tick>
+                                        </template>
+                             </b-slider>
+                            </b-field>
+                            <b-field label="Percentage uren claimbehandeling">
+                                    <b-slider id="productiviteit" v-model="productiviteit"  :min="0" :max="100"   :custom-formatter="val => val + '%'"></b-slider>
+                                    </b-field>
+                            <b-field label="Percentage dossiers compleet bij zelfde persoon">
+                            <b-slider id="zaak" v-model="zaak"  :min="0" :max="100"   :custom-formatter="val => val + '%'"></b-slider>
+                            </b-field>
+                            <div class="field">
+                                    <b-switch v-model="random" :value="true">
+                                      Claims random verdelen
+                                    </b-switch>
+                            </div>
+                        </div>
+                  </article>
+                </div>
+                <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <p class="title">Simulatie</p>
+                    <p class="subtitle">Start simulatie</p>
+                    
+                            <div class="field">
+                     <b-field label="Aantal werkdagen">
+                      <b-slider id="werkdagen" v-model="werkdagen"  :min="0" :max="260" >
+                       <template v-for="werkdagen in [50, 100,150,200]">
+                        <b-slider-tick :value="werkdagen" :key="werkdagen">{{ werkdagen }}</b-slider-tick>
+                        </template>
+                                    </b-slider>
+                                   </b-field>
+                        </div>
+                        <br>
+                        <div class="content">
+                            <br>
+                                   <div class="buttons is-centered">
+                       <button class="button is-large" v-on:click="getData">
+                            <span class="icon is-large">
+                                  <i class="far fa-play-circle"></i>
+        
+                            </span>
+                    
+                          </button>
+                         
+                          
+                           
+                           
+                             </div>
+                                  <section>
+                                        <b-progress size="is-large" v-show="show"> </b-progress>
+                                  </section>
+                                </div>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            <div class="tile is-ancestor">
+                <div class="tile is-vertical is-8">
+                    <div class="tile is-parent">
+                        <article class="tile is-child box">
+                          <p class="title">Werkvoorraad en capaciteit</p>
+                          
+                          <div class="content">
+                                <div class="columns">
+                                        <div class="column">
+                                                <line-chart :werkdagen='werkdagen' :instroomresult='instroomwerkdag' :uitstroomresult='uitstroomwerkdag' :capaciteitresult='capaciteitwerkdag'></line-chart>
+                                        </div>	    
+                               </div>    
+                             </div>
+                        </article>
+                    </div>
+                </div>
+                <div class="tile is-parent">
+                        <article class="tile is-child box">
+                          <p class="title">Simulatie KPI's</p>
+                   
+                        
+                          <div class="content">
+                              <b-carousel :arrow-hover="True">
+                                  <b-carousel-item v-for="(carousel, i) in carousels" :key="i">
+                                      <section :class="`hero is-medium is-${carousel.color}`">
+                                          <div class="hero-body has-text-centered">
+                                              <h1 class="title">{{carousel.title}}</h1>
+                                              <h2 class="subtitle">{{carousel.subtitle}}</h2>
+                                          </div>
+                                      </section>
+                                  </b-carousel-item>
+                              </b-carousel>
+                            </div></div>
+                        
+                        </article></div>
+             </div>
+  
+            </div>
+        </div>
+    </section>
+
+</main>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.3/vue.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+<script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.min.js"></script>
+<div id="app">
+        <!-- Buefy components goes here -->
+    </div>
+
+    <script src="https://unpkg.com/vue"></script>
+    <!-- Full bundle -->
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+
+    <!-- Individual components -->
+    <script src="https://unpkg.com/buefy/dist/components/table"></script>
+    <script src="https://unpkg.com/buefy/dist/components/input"></script>
+
+<script>
+
+    const systeem = {
+    data: function()  {
+        return {
+            instroom: 0,
+            aanraaktijd: 0,
+            aanraakmomenten: 0,
+            wachtdagen: 0,
+            fte: 20,
+            zaak: 90,
+            productiviteit: 65,
+            calamiteit: 0,
+            werkdagen: 50,
+            random: true,
+            show: false,
+            wachttijd: 0,
+            total_in: 0,
+            total_out: 0,
+            instroomwerkdag: [],
+            uitstroomwerkdag: [],
+            capaciteitwerkdag: [],
+            AHT: 0,
+            Doorlooptijd: 0 ,
+            carousels: [
+                { title: 0, subtitle: 'Afhandeltijd (min)' , color: 'primary' },
+                { title: 0, subtitle: 'Doorlooptijd (dagen)' , color: 'dark' },
+                { title: 0, subtitle: 'Instroom' , color: 'success' },
+                { title: 0, subtitle: 'Uitstroom' , color: 'info' },
+                { title: 0, subtitle: 'Taakvertraging (dagen)' , color: 'danger' }
+            ]
+        }
+    },
+    computed:{
+        getWerkdagen: function () {
+            return this.werkdagen
+        }
+
+    },
+    methods: {
+        sliderType(sliderValue){
+
+        if (sliderValue < 10 && sliderValue > -10){
+        return "is-succes";
+        } else {
+        return "is-danger"};
+        },
+    
+    
+    getData: function() {
+    this.show = true
+      axios
+        .get(location.href + '/simulate', {
+          params: {
+            Instroom: this.instroom.toString(),
+	        Aanraaktijd: this.aanraaktijd.toString(),
+	        Aanraakmomenten: this.aanraakmomenten.toString(),
+	        Wachtdagen: this.wachtdagen.toString(),
+	        FTE: this.fte.toString(),
+	        Productiviteit: this.productiviteit.toString(),
+	        Zaak: this.zaak.toString(),
+	        Werkdagen:  this.werkdagen.toString(),
+	        Random: (this.random *1 ).toString()
+
+
+          }
+        })
+        .then(response => {
+          console.log(response);
+          console.log(response.data.length);
+          this.instroomwerkdag= response.data.Instroom 
+          this.uitstroomwerkdag= response.data.Uitstroom 
+          this.capaciteitwerkdag= response.data.Capaciteit
+          this.wachttijd= response.data.Wachttijd.toFixed(2)
+          this.total_in = response.data.Instroom.reduce(function(acc, val) { return acc + val; }, 0)
+          this.total_out =response.data.Uitstroom.reduce(function(acc, val) { return acc + val; }, 0)
+          this.AHT = response.data.AHT.toFixed(2)
+          this.Doorlooptijd = response.data.Doorlooptijd.toFixed(2)
+
+          this.carousels[0].title = response.data.AHT.toFixed(2)
+          this.carousels[1].title = response.data.Doorlooptijd.toFixed(2)
+          this.carousels[2].title = response.data.Instroom.reduce(function(acc, val) { return acc + val; }, 0)
+          this.carousels[3].title = response.data.Uitstroom.reduce(function(acc, val) { return acc + val; }, 0)
+          this.carousels[4].title = response.data.Wachttijd.toFixed(2)
+
+          console.log(this.$data)
+          this.show = false
+        })
+        .catch(error => {
+          console.log(error);
+          this.errored = true;
+        })
+        .finally(() => (this.loading = false));
+    }
+  }
+
+
+    
+    }
+    
+
+
+
+Vue.component('line-chart', {
+  extends: VueChartJs.Line,
+  props: ['werkdagen', 'instroomresult', 'uitstroomresult', 'capaciteitresult'],
+  mounted ()  {
+    this.renderLineChart();
+  },
+  computed: {
+    werkdagendata: function() {
+      return this.werkdagen;
+    },
+    instroomdata: function() {
+        return this.instroomresult
+
+    },
+    uitstroomdata: function() {
+        return this.uitstroomresult
+    },
+    capaciteitdata: function() {
+        return this.capaciteitresult
+    }
+   
+  },
+  methods: {
+    renderLineChart: function() {
+        this.renderChart({
+        labels: Array.from(Array(this.werkdagendata).keys()),
+        datasets: [
+            {
+            label: 'Instroom',
+            data: this.instroomresult,
+            fill: false,
+            yAxisID: 'A',
+            borderColor: '#00D1B2'
+            },
+            {
+            label: 'Uitstroom',
+            data: this.uitstroomresult,
+            fill: false,
+            yAxisID: 'A',
+            borderColor: '#3273DC'
+            },
+            {
+            label: 'Benutting capaciteit',
+            yAxisID: 'B',
+            data: this.capaciteitresult,
+            backgroundColor: '#FF3860'
+            }
+        ]}, {responsive: true, maintainAspectRatio: false,    scales: {
+      yAxes: [{
+        id: 'A',
+        type: 'linear',
+        position: 'left',
+      }, {
+        id: 'B',
+        type: 'linear',
+        position: 'right',
+        ticks: {
+          max: 1,
+          min: 0
+        }
+      }]
+    }},
+        ) 
+        
+        }},
+    watch: {
+            'werkdagen': function(newVal) {
+    	    this.renderLineChart();
+            }, 
+            'instroomresult': function(newVal) {
+    	    this.renderLineChart();
+            },
+            'uitstroomresult': function(newVal) {
+    	    this.renderLineChart();
+            }, deep: true
+
+    }
+
+});
+
+
+
+
+const app = new Vue(systeem)
+app.$mount('#app')
+
+
+        
+
+
+   
+</script>
