@@ -64,6 +64,43 @@
                         </div>
                   </article>
                 </div>
+
+
+                <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <p class="title">Vakantie</p>
+                    <p class="subtitle">Periode van minder behandelaren</p>
+                    <div class="field">
+                            <b-field label="Vakantieperiode (werkdagen)">
+                                    <b-slider id="vakantieduur" v-model="vakantieduur"  :min="0" :max="werkdagen"></b-slider>
+                                    </b-field>
+                            <b-field label="Aantal FTE's afwezig">
+                            <b-slider id="vakantieFTE" v-model="vakantieFTE"  :min="0" :max="fte" >
+                                             <template v-for="val in []">
+                                                     <b-slider-tick :value="val" :key="val">{{ val }}</b-slider-tick>
+                                                 </template>
+                                      </b-slider>
+                                     </b-field>
+
+
+
+                      
+                        </div>
+                  </article>
+                </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
                 <div class="tile is-parent">
                   <article class="tile is-child box">
                     <p class="title">Simulatie</p>
@@ -179,6 +216,8 @@
             productiviteit: 65,
             calamiteit: 0,
             werkdagen: 50,
+            vakantieduur: 0,
+            vakantieFTE: 0,
             random: true,
             show: false,
             wachttijd: 0,
@@ -227,8 +266,9 @@
 	        Productiviteit: this.productiviteit.toString(),
 	        Zaak: this.zaak.toString(),
 	        Werkdagen:  this.werkdagen.toString(),
-	        Random: (this.random *1 ).toString()
-
+          Random: (this.random *1 ).toString(),
+          VakantieDuur: this.vakantieduur.toString(),
+          VakantieFTE: this.vakantieFTE.toString()
 
           }
         })
@@ -293,7 +333,7 @@ Vue.component('line-chart', {
   methods: {
     renderLineChart: function() {
         this.renderChart({
-        labels: Array.from(Array(this.werkdagendata).keys()),
+        labels: Array.from(Array(this.werkdagendata + 50).keys()),
         datasets: [
             {
             label: 'Instroom',

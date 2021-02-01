@@ -106,6 +106,8 @@ type Simparams struct {
 	Zaak            int `json:"Zaak"`
 	Werkdagen       int `json:"Werkdagen"`
 	Random          int `json:"Random"`
+	Vakantieduur    int `json:"VakantieDuur"`
+	VakantieFTE     int `json:"VakantieFTE"`
 }
 
 type Simresults struct {
@@ -271,6 +273,19 @@ func (pool *Pool) pickAgent(random int, werkdag int, overall int) Agent {
 	return agent
 }
 
+func (ap *Pool) setVakantie(p Simparams) {
+	//Zet als er een vakantie is opgegeven het aantal agents, voor de tijd van vakantie even op 0
+	//die dan later niet meemen
+
+	for d := 0; d < p.Vakantieduur; d++ {
+		for f := 0; f < p.VakantieFTE; f++ {
+			ap.Agents[f].Minutes[d+OPWARMTIJD+10] = 0
+
+		}
+
+	}
+}
+
 //aggresive devide function
 func (s *Systeem) devideAgents(p Simparams) Pool {
 
@@ -280,6 +295,7 @@ func (s *Systeem) devideAgents(p Simparams) Pool {
 
 	werkdagen := p.Werkdagen
 	//maak pool met agents
+	//TODO: variabiliteit in beschikbaarheid per dag
 	for i := 0; i < poolsize; i++ {
 		a := Agent{}
 
@@ -289,6 +305,9 @@ func (s *Systeem) devideAgents(p Simparams) Pool {
 		}
 		pool.Agents = append(pool.Agents, a)
 	}
+
+	//set de vakantie
+	pool.setVakantie(p)
 
 	//init arrays met in/uitstroom
 	for i := 0; i < werkdagen; i++ {
@@ -367,6 +386,7 @@ func (s *Systeem) devideAgents(p Simparams) Pool {
 
 var SYSTEEM Systeem
 var SRC = rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
+var OPWARMTIJD = 50 //50 dagen opwarmtijd vande simulatie, voor starten vanaf een baseline ijzeren voorraad
 
 func parseSysteem() {
 	cwd, err := os.Getwd()
@@ -386,11 +406,13 @@ func checkError(err error) {
 }
 
 func (s *Systeem) Simulate(p Simparams) Simresults {
+	p.Werkdagen += OPWARMTIJD
 	poolResult := s.devideAgents(p)
 	simResult := Simresults{}
 	simResult.Instroom = poolResult.Instroom
 	simResult.Uitstroom = poolResult.Uitstroom
 	simResult.Wachttijd = float64(sum(poolResult.Taakvertraging)) / float64(len(poolResult.Taakvertraging))
+	// 1 fte is 34 uur// dit moet beter, want iemand werkt wel hele dag nooit 6.8 uur dus even laten staan op 480
 	totaldagcap := float64(p.FTE) * (480 * float64(p.Productiviteit) / 100.0)
 	for i := 0; i < p.Werkdagen; i++ {
 		restcap := 0
@@ -429,7 +451,11 @@ func doSimulation(w http.ResponseWriter, r *http.Request) {
 	checkError(err)
 	Random, err := strconv.Atoi(r.FormValue("Random"))
 	checkError(err)
-	p := Simparams{Instroom, Aanraaktijd, Aanraakmomenten, Wachtdagen, FTE, Productiviteit, Zaak, Werkdagen, Random}
+	VakantieDuur, err := strconv.Atoi(r.FormValue("VakantieDuur"))
+	checkError(err)
+	VakantieFTE, err := strconv.Atoi(r.FormValue("VakantieFTE"))
+	checkError(err)
+	p := Simparams{Instroom, Aanraaktijd, Aanraakmomenten, Wachtdagen, FTE, Productiviteit, Zaak, Werkdagen, Random, VakantieDuur, VakantieFTE}
 	//dec := json.NewDecoder(r.Body)
 	//var p Simparams
 	//err := dec.Decode(&p)
